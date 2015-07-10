@@ -37,8 +37,9 @@ exports.isLoginOptional = function(req, res, next) {
     //.split(' ')[1];
     try {
       var decoded = jwt.decode(token, tokenSecret);
-      if (decoded.exp <= Date.now()) {
-        res.status(400).send(msg.et);
+      if (decoded.exp >= Date.now()) {
+        console.log("token exp");
+        res.status(403).send(msg.et);
       } else {
         req.user = decoded.user;
         return next();
@@ -61,7 +62,7 @@ exports.isLogin = function(req, res, next) {
     try {
       var decoded = jwt.decode(token, tokenSecret);
       if (decoded.exp <= Date.now()) {
-        res.status(400).send(msg.et);
+        res.status(407).send(msg.et);
       } else {
         req.user = decoded.user;
         return next();
@@ -132,7 +133,8 @@ exports.signup = function(req, res, next) {
     else {
       if(!req.admin) res.status(200).send(msg.signup);
       email.sendSignupEmail(user.email, user.username, user.verificationCode); 
-      if (req.body.lead.cslug && req.body.lead.sid) course.addLead(user.id, req.body.lead.cslug, req.body.lead.sid);
+      if (req.body.lead) 
+        if (req.body.lead.cslug && req.body.lead.sid) course.addLead(user.id, req.body.lead.cslug, req.body.lead.sid);
       if (req.admin) {
         email.sendPassword(user.email, user.username, req.body.password);     
         req.user = user;
@@ -199,7 +201,8 @@ exports.login = function(req, res) {
       var token = createJwtToken(user);
       var temp = {
         username: user.username,
-        slug: user.slug
+        slug: user.slug,
+        role: user.role
       };
       console.log(temp);
       res.send({
@@ -396,7 +399,7 @@ exports.hasEmail = function(req, res, next) {
 exports.getUser = function(req, res) {
   if (req.user.slug == req.params.uslug) {
     User.findById(req.user._id)
-      .select('-_id profile courses points slug username mobile email badges referalCode')
+      .select('_id profile courses points slug username mobile email badges referalCode')
       .populate({
         path: 'badges._id'
       })
@@ -421,7 +424,7 @@ exports.getUser = function(req, res) {
         }
       });
   } else {
-    res.status(401).send(msg.unauth);
+    res.status(404).send(msg.unauth);
   }
 };
 

@@ -11,6 +11,7 @@ var logger = require('morgan');
 var errorHandler = require('errorhandler');
 var methodOverride = require('method-override');
 
+var multipart = require('connect-multiparty');
 
 var _ = require('lodash');
 var path = require('path');
@@ -50,6 +51,10 @@ var hour = 3600000;
 var day = hour * 24;
 var week = day * 7;
 
+app.use(multipart({
+	uploadDir: path.join(__dirname, 'temp')
+}));
+var multipartMiddleWare = multipart();
 
 /**
  * Express configuration.
@@ -123,6 +128,10 @@ app.get('/api/admin/courses/:cslug/:sid/attendees', userController.isAdmin, admi
 app.post('/api/admin/courses/:cslug/:sid/attendees/status', userController.isAdmin, adminController.changeAttendeeStatus);
 app.post('/api/admin/courses/:cslug/:sid/attendees/addPayment', userController.isAdmin, adminController.addPayment, invoiceController.generate);
 app.get('/api/admin/courses/:cslug/:sid/leads', userController.isAdmin, adminController.getLeads);
+app.post('/api/admin/courses/:cslug/update', userController.isAdmin, adminController.updateCourse);
+app.delete('/api/admin/courses/:cslug/update', userController.isAdmin, adminController.deleteCourse);
+app.put('/api/admin/courses/:cslug/image', userController.isAdmin, adminController.uploadImages);
+app.delete('/api/admin/courses/:cslug/image', userController.isAdmin, adminController.deleteImages);
 app.get('/api/admin/courses/:cslug', userController.isAdmin, adminController.getCourse);
 app.post('/api/admin/createCourse', userController.isAdmin, adminController.createCourse);
 app.post('/api/admin/courses/join', userController.isAdmin, adminController.joinPrep, userController.signup, courseController.joinCourse, invoiceController.generate);
