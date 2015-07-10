@@ -36,4 +36,3 @@ config/secrets.js
 public/
 vendor/
 temp/
->>>>>>> dev_2

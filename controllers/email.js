@@ -1,8 +1,4 @@
-var path = require('path'),
-  templatesDir = path.resolve(__dirname, '..', 'templates')
-  /* , emailTemplates = require('email-templates') */ //Not Used currently
-  ,
-  nodemailer = require('nodemailer');
+var path = require('path');
 var User = require('../models/User');
 var moment = require('moment');
 var MailChimpAPI = require('mailchimp').MailChimpAPI;
@@ -11,14 +7,6 @@ var config = new secret();
 var validator = require('email-validator');
 var MCapi = require('mailchimp-api');
 var mcAPI = new MCapi.Mailchimp(config.mailchimp.api);
-
-var transporter = nodemailer.createTransport({
-  service: 'Mandrill',
-  auth: {
-    user: config.mandrill.user,
-    pass: config.mandrill.password
-  }
-});
 
 var mandrill = require('mandrill-api/mandrill');
 var mandrill_client = new mandrill.Mandrill(config.mandrill.password);
@@ -93,30 +81,6 @@ exports.sendCourseReg = function(data) {
     // Mandrill returns the error as an object with name and message keys
     console.log('A mandrill error occurred: ' + e.name + ' - ' + e.message);
     // A mandrill error occurred: Unknown_Subaccount - No subaccount exists with the id 'customer-123'
-  });
-};
-
-exports.sendEmail = function(req, res, next) {
-  var from = 'info@codegurukul.com';
-
-  var mailOptions = {
-    to: req.to,
-    from: from,
-    subject: req.subject,
-    text: req.email
-  };
-  transporter.sendMail(mailOptions, function(err) {
-    if (err)
-      res.send(err);
-    else {
-      if (req.pay) {
-        next();
-      } else {
-        res.json({
-          message: 'Mail Sent'
-        });
-      }
-    }
   });
 };
 

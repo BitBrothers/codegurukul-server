@@ -96,7 +96,7 @@ app.post('/api/auth/login', userController.login);
 app.post('/api/auth/facebook', userController.facebookAuth);
 app.post('/api/auth/google', userController.googleAuth);
 app.get('/api/users', userController.hasEmail);
-app.post('/api/email', emailController.contactUs, emailController.sendEmail);
+// app.post('/api/email', emailController.contactUs, emailController.sendEmail);
 
 //User
 //app.post('/api/user/password', userController.isLogin, userController.changeUserPassword, emailController.sendEmail);
