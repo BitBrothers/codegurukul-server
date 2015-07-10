@@ -7,6 +7,8 @@ var config = new secret();
 var validator = require('email-validator');
 var MCapi = require('mailchimp-api');
 var mcAPI = new MCapi.Mailchimp(config.mailchimp.api);
+var fs = require('fs');
+var path = require('path');
 
 var mandrill = require('mandrill-api/mandrill');
 var mandrill_client = new mandrill.Mandrill(config.mandrill.password);
@@ -285,3 +287,72 @@ exports.addNewsletter = function(req, res) {
     return res.status(400).send('Email parameter is required.');
     } 
 };
+
+exports.sendCourseContent = function (res, cid, email, pdf) {
+  console.log(cid);
+  console.log(email);
+  console.log(pdf);
+  var encFile = base64_encode(pdf);
+  
+  var template_name = "welcome_template";
+  var template_content = [];
+  var message = {
+    "from_email": "info@codegurukul.com",
+    "from_name": "Codegurukul Team",
+    "to": [{
+      "email": email,
+      "type": "to"
+    }],
+    "headers": {
+      "Reply-To": "info@codegurukul.com"
+    },
+    "auto_text": true,
+    "inline_css": true,
+    "merge": true,
+    "merge_language": "handlebars",
+    "global_merge_vars": [{
+      "name": "companyName",
+      "content": "Codegurukul"
+    }, {
+      "name": "subject",
+      "content": "Content for course"
+    }],
+    "merge_vars": [{
+      "rcpt": email,
+      "vars": [{
+        "name": "name",
+        "content": "nameeeeeeeee"
+      },{
+        "name": "verificationCode",
+        "content": "testttttttt"
+      }]
+    }],
+    "attachments": [{
+      "type": "application/pdf", 
+      "name": "CourseContent.pdf",
+      "content": encFile
+    }]
+  };
+  var async = false;
+  mandrill_client.messages.sendTemplate({
+    "template_name": template_name,
+    "template_content": template_content,
+    "message": message,
+    "async": async
+  }, function(result) {
+    console.log(result);
+    res.status(200).send("success");
+  }, function(e) {
+    // Mandrill returns the error as an object with name and message keys
+    console.log('A mandrill error occurred: ' + e.name + ' - ' + e.message);
+    // A mandrill error occurred: Unknown_Subaccount - No subaccount exists with the id 'customer-123'
+  });
+}
+
+// function to encode file data to base64 encoded string
+function base64_encode(file) {
+    // read binary data
+    var bitmap = fs.readFileSync(path.resolve('public/', file));
+    // convert binary data to base64 encoded string
+    return new Buffer(bitmap).toString('base64');
+}

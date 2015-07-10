@@ -19,6 +19,7 @@ var courseSchema = new mongoose.Schema({
   duration: String,
   inviteOnly: Boolean,
   inviteMessage: String,
+  contentPdf: String,
   slots: [{
     startDate: Date,
     city: String,

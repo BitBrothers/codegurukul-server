@@ -113,6 +113,7 @@ app.use(errorHandler());
 app.post('/api/courses/join', userController.isLogin, razorController.verifyPay, courseController.joinCourse, invoiceController.generate);
 app.get('/api/courses/:cslug/:sid/canjoin', userController.isLogin, courseController.canJoin);
 app.post('/api/courses/:cslug/addlead', userController.isLogin, courseController.leadPre);
+app.post('/api/courses/:cslug/sendContent', courseController.sendCourseContent);
 app.get('/api/courses/:cslug', userController.isLoginOptional, courseController.getCourse);
 app.get('/api/courses', courseController.getCourses);
 

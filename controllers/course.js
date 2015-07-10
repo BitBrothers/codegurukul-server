@@ -7,6 +7,8 @@ var moment = require('moment');
 var secret = require('../config/secrets');
 var config = new secret();
 var badge = require('../controllers/badge');
+var lead = require('../controllers/lead');
+var validator = require('email-validator');
 
 exports.getCourses = function(req, res) {
   var query = Course.find().select('name slug description domain price content thumb date');
@@ -180,4 +182,23 @@ exports.leadPre = function (req, res) {
     courseCont.addLead(req.user._id, req.params.cslug, req.params.sid);
     res.status(200).send("Success");
   };
+}
+
+exports.sendCourseContent = function (req, res) {
+  if (req.body.email) {
+    if (validator.validate(req.body.email)) {
+      Course.findOne({slug: req.params.cslug}, function (err, course) {
+        if (err) return res.status(400).send(err);
+        else if (!course) return res.status(400).send("Course not found");
+        else {
+          email.sendCourseContent(res, course._id, req.body.email, course.contentPdf);
+          var data = {
+            email: req.body.email,
+            course: course._id
+          };
+          lead.addLead(data);
+        }
+      })      
+    } else res.status(400).send("Email invalid");
+  } else res.status(400).send("Email required");
 }
