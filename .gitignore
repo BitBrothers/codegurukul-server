@@ -33,6 +33,5 @@ node_modules
 
 Thumbs.db
 config/secrets.js
-public/
 vendor/
 temp/
