@@ -7,6 +7,8 @@ var moment = require('moment');
 var secret = require('../config/secrets');
 var config = new secret();
 var badge = require('../controllers/badge');
+var lead = require('../controllers/lead');
+var validator = require('email-validator');
 
 exports.getCourses = function(req, res) {
   var query = Course.find().select('name slug description domain price content thumb date');

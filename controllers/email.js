@@ -7,6 +7,8 @@ var config = new secret();
 var validator = require('email-validator');
 var MCapi = require('mailchimp-api');
 var mcAPI = new MCapi.Mailchimp(config.mailchimp.api);
+var fs = require('fs');
+var path = require('path');
 
 var mandrill = require('mandrill-api/mandrill');
 var mandrill_client = new mandrill.Mandrill(config.mandrill.password);
