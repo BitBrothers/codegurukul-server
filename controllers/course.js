@@ -161,8 +161,7 @@ exports.addLead = function (uid, cslug, sid) {
       else if (!course) return;
       else {
         if (course.slots.id(sid))
-          {console.log(sid);
-            if (course.slots.id(sid).leads.id(uid)) return;}
+          if (course.slots.id(sid).leads.id(uid)) return;
         course.slots.id(sid).leads.push(uid);
         course.save(function  (err, course) {
           if (err) return;
@@ -180,4 +179,25 @@ exports.leadPre = function (req, res) {
     courseCont.addLead(req.user._id, req.params.cslug, req.params.sid);
     res.status(200).send("Success");
   };
+}
+
+exports.sendCourseContent = function (req, res) {
+  if (req.body.email) {
+    if (validator.validate(req.body.email)) {
+      Course.findOne({slug: req.params.cslug}, function (err, course) {
+        if (err) return res.status(400).send(err);
+        else if (!course) return res.status(400).send("Course not found");
+        else {
+          if (course.contentPdf)
+            email.sendCourseContent(res, course._id, req.body.email, course.contentPdf);
+          else res.status(400).send("PDF not added for this course");
+          var data = {
+            email: req.body.email,
+            course: course._id
+          };
+          lead.addLead(data);
+        }
+      })      
+    } else res.status(400).send("Email invalid");
+  } else res.status(400).send("Email required");
 }
