@@ -46,7 +46,13 @@ var userSchema = new mongoose.Schema({
         }
     }],
     tokens: Array,
-
+    facebook: String,
+    twitter: String,
+    google: String,
+    github: String,
+    instagram: String,
+    linkedin: String,
+        
     profile: {
         joinDate: {
             type: Date,
@@ -64,12 +70,7 @@ var userSchema = new mongoose.Schema({
             enum: ['student', 'professional', 'other']
         },
         website: String,
-        facebook: String,
-        twitter: String,
-        google: String,
-        github: String,
-        instagram: String,
-        linkedin: String,
+        picture: String,
         organization: String,
         college: String,
         stream: String,
@@ -111,9 +112,9 @@ function codeGen(len) {
 
 userSchema.pre('save', function(next) {
     var user = this;
-    if (user.slug == null || user.slug == undefined) {
-        user.slug = slugify(user.username + Math.floor((Math.random() * 100) + 1));
-    }
+//    if (user.slug == null || user.slug == undefined) {
+//        user.slug = slugify(user.username + Math.floor((Math.random() * 100) + 1));
+//    }
     if (this.isNew){
       this.verificationCode = codeGen(15);
       this.referalCode = codeGen(10);

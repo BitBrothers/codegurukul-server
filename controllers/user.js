@@ -8,6 +8,7 @@ var secrets = require('../config/secrets');
 var config = secrets();
 var msg = require('../messages');
 var validator = require('email-validator');
+var request = require('request');
 /**
  * Model.
  */
@@ -15,21 +16,15 @@ var User = require('../models/User');
 
 var tokenSecret = config.sessionSecret;
 
-
-
-function createJwtToken(user) {
-  var temp = {
-    _id: user._id,
-    slug: user.slug,
-    role: user.role
-  };
+function createJWT(user) {
   var payload = {
-    user: temp,
-    iat: new Date().getTime(),
-    exp: moment().add(7, 'days').valueOf()
+    sub: user._id,
+    iat: moment().unix(),
+    exp: moment().add(14, 'days').unix()
   };
   return jwt.encode(payload, tokenSecret);
-};
+}
+
 
 exports.isLoginOptional = function(req, res, next) {
   if (req.headers.authorization) {
@@ -232,7 +227,7 @@ exports.githubAuth = function(req, res) { //user model structure changed (slug, 
       });
     }
     var user = new User();
-    user.profile.name = profile.displayName;
+    user.profile.fullname = profile.fullname;
     user.email = profile.emails[0].value;
     user.save(function(err) {
       if (err) return next(err);
@@ -270,7 +265,7 @@ exports.linkedinAuth = function(req, res) { //user model structure changed (slug
       });
     }
     var user = new User();
-    user.profile.name = profile.displayName;
+    user.profile.fullname = profile.fullname;
     user.email = profile.emails[0].value;
     user.save(function(err) {
       if (err) return next(err);
@@ -290,49 +285,71 @@ exports.linkedinAuth = function(req, res) { //user model structure changed (slug
 };
 
 exports.facebookAuth = function(req, res) { //user model structure changed (slug, username moved out of profile)
-  var profile = req.body.profile;
-  var signedRequest = req.body.signedRequest;
-  var encodedSignature = signedRequest.split('.')[0];
-  var payload = signedRequest.split('.')[1];
-
-  var appSecret = 'fc5a36cb1fa441c60b629ee6bc65bc85';
-
-  var expectedSignature = crypto.createHmac('sha256', appSecret).update(payload).digest('base64');
-  expectedSignature = expectedSignature.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  if (encodedSignature !== expectedSignature) {
-    return res.send(400, 'Invalid Request Signature');
-  }
-
-  User.findOne({
-    email: profile.email
-  }, function(err, existingUser) {
-    if (existingUser) {
-      var token = createJwtToken(existingUser);
-      var tempy = {
-        profile: existingUser.profile
-      };
-      return res.send({
-        token: token,
-        user: tempy
-      });
+  var accessTokenUrl = 'https://graph.facebook.com/v2.3/oauth/access_token';
+  var graphApiUrl = 'https://graph.facebook.com/v2.3/me';
+  var params = {
+    code: req.body.code,
+    client_id: req.body.clientId,
+    client_secret: config.facebook.clientSecret,
+    redirect_uri: req.body.redirectUri
+  };
+  console.log(params);
+  console.log(req.body);
+//      facebook: {
+//        clientID: process.env.FACEBOOK_ID || '779129992098375',
+//        clientSecret: process.env.FACEBOOK_SECRET || 'fc5a36cb1fa441c60b629ee6bc65bc85',
+//        callbackURL: '/auth/facebook/callback',
+//        passReqToCallback: true
+//      },
+  // Step 1. Exchange authorization code for access token.
+  request.get({ url: accessTokenUrl, qs: params, json: true }, function(err, response, accessToken) {
+    if (response.statusCode !== 200) {
+      return res.status(500).send({ message: accessToken.error.message });
     }
-    var user = new User();
-
-    user.email = profile.email;
-    user.username = profile.name;
-    user.save(function(err) {
-      if (err) return next(err);
-      else {
-        var token = createJwtToken(user);
-        var tempy = {
-          profile: user.profile
-        };
-        res.send({
-          token: token,
-          user: tempy
+// Step 2. Retrieve profile information about the current user.
+    request.get({ url: graphApiUrl, qs: accessToken, json: true }, function(err, response, profile) {
+      if (response.statusCode !== 200) {
+        return res.status(500).send({ message: profile.error.message });
+      }
+      if (req.headers.authorization) {
+        User.findOne({ facebook: profile.id }, function(err, existingUser) {
+          if (existingUser) {
+            return res.status(409).send({ message: 'There is already a Facebook account that belongs to you' });
+          }
+          var token = req.headers.authorization.split(' ')[1];
+          var payload = jwt.decode(token, tokenSecret);
+          User.findById(payload.sub, function(err, user) {
+            if (!user) {
+              return res.status(400).send({ message: 'User not found' });
+            }
+            user.facebook = profile.id;
+            user.profile.picture = user.picture || 'https://graph.facebook.com/v2.3/' + profile.id + '/picture?type=large';
+            user.fullname = user.fullname || profile.name;
+            user.profile.email = profile.email;
+            user.save(function() {
+              var token = createJWT(user);
+              res.send({ token: token });
+            });
+          });
+        });
+      } else {
+        // Step 3b. Create a new user account or return an existing one.
+        User.findOne({ facebook: profile.id }, function(err, existingUser) {
+          if (existingUser) {
+            var token = createJWT(existingUser);
+            return res.send({ token: token });
+          }
+          var user = new User();
+          user.facebook = profile.id;
+          user.picture = 'https://graph.facebook.com/' + profile.id + '/picture?type=large';
+          user.fullname = profile.name;
+          user.profile.email = profile.email;
+          user.save(function() {
+            var token = createJWT(user);
+            res.send({ token: token });
+          });
         });
       }
-
     });
   });
 };
@@ -356,7 +373,7 @@ exports.googleAuth = function(req, res) { //user model structure changed (slug, 
       });
     }
     var user = new User();
-    user.profile.name = profile.displayName;
+    user.profile.fullname = profile.fullname;
     user.email = profile.emails[0].value;
     user.save(function(err) {
       if (err) return next(err);
