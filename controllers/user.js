@@ -75,6 +75,40 @@ exports.isLogin = function(req, res, next) {
   }
 };
 
+exports.ensureAuthenticated = function(req, res, next) {
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: 'Please make sure your request has an Authorization header' });
+  }
+  var token = req.headers.authorization.split(' ')[1];
+
+  var payload = null;
+  try {
+    payload = jwt.decode(token, config.TOKEN_SECRET);
+  }
+  catch (err) {
+    return res.status(401).send({ message: err.message });
+  }
+
+  if (payload.exp <= moment().unix()) {
+    return res.status(401).send({ message: 'Token has expired' });
+  }
+  req.user = payload.sub;
+  next();
+};
+
+exports.putUserProfile = function(req, res) {
+  User.findById(req.user, function(err, user) {
+    if (!user) {
+      return res.status(400).send({ message: 'User not found' });
+    }
+    user.displayName = req.body.displayName || user.displayName;
+    user.email = req.body.email || user.email;
+    user.save(function(err) {
+      res.status(200).end();
+    });
+  });
+};
+
 exports.isAdmin = function(req, res, next) {
   if (req.headers.authorization) {
     var token = req.headers.authorization;
@@ -185,25 +219,16 @@ exports.signupVerify = function (req, res) {
   });
 };
 
-exports.login = function(req, res) {
-  User.findOne({
-    email: req.body.email
-  }, function(err, user) {
-    if (!user) return res.status(401).send(msg.unf);
+exports.postLogin = function(req, res) {
+  User.findOne({ email: req.body.email }, '+password', function(err, user) {
+    if (!user) {
+      return res.status(401).send({ message: 'Wrong email and/or password' });
+    }
     user.comparePassword(req.body.password, function(err, isMatch) {
-      if (!isMatch) return res.status(401).send(msg.inep);
-      if (!user.verified) return res.status(410).send(msg.ntver);
-      var token = createJwtToken(user);
-      var temp = {
-        username: user.username,
-        slug: user.slug,
-        role: user.role
-      };
-      console.log(temp);
-      res.send({
-        token: token,
-        user: temp
-      });
+      if (!isMatch) {
+        return res.status(401).send({ message: 'Wrong email and/or password' });
+      }
+      res.send({ token: createJWT(user) });
     });
   });
 };
@@ -295,18 +320,10 @@ exports.facebookAuth = function(req, res) { //user model structure changed (slug
   };
   console.log(params);
   console.log(req.body);
-//      facebook: {
-//        clientID: process.env.FACEBOOK_ID || '779129992098375',
-//        clientSecret: process.env.FACEBOOK_SECRET || 'fc5a36cb1fa441c60b629ee6bc65bc85',
-//        callbackURL: '/auth/facebook/callback',
-//        passReqToCallback: true
-//      },
-  // Step 1. Exchange authorization code for access token.
   request.get({ url: accessTokenUrl, qs: params, json: true }, function(err, response, accessToken) {
     if (response.statusCode !== 200) {
       return res.status(500).send({ message: accessToken.error.message });
     }
-// Step 2. Retrieve profile information about the current user.
     request.get({ url: graphApiUrl, qs: accessToken, json: true }, function(err, response, profile) {
       if (response.statusCode !== 200) {
         return res.status(500).send({ message: profile.error.message });
@@ -333,7 +350,6 @@ exports.facebookAuth = function(req, res) { //user model structure changed (slug
           });
         });
       } else {
-        // Step 3b. Create a new user account or return an existing one.
         User.findOne({ facebook: profile.id }, function(err, existingUser) {
           if (existingUser) {
             var token = createJWT(existingUser);
@@ -410,6 +426,12 @@ exports.hasEmail = function(req, res, next) {
     res.send({
       available: !user
     });
+  });
+};
+
+exports.getUserProfile = function(req, res) {
+  User.findById(req.user, function(err, user) {
+    res.send(user);
   });
 };
 

@@ -92,11 +92,13 @@ app.post('/api/auth/linkedin', userController.linkedinAuth);
 app.post('/api/auth/signup', userController.signup);
 app.post('/api/auth/signup/resend', userController.signupResend);
 app.post('/api/auth/signup/verification', userController.signupVerify);
-app.post('/api/auth/login', userController.login);
+app.post('/api/auth/login', userController.postLogin);
 app.post('/api/auth/facebook', userController.facebookAuth);
 app.post('/api/auth/google', userController.googleAuth);
 app.get('/api/users', userController.hasEmail);
 // app.post('/api/email', emailController.contactUs, emailController.sendEmail);
+app.get('/api/me', userController.ensureAuthenticated, userController.getUserProfile);
+app.put('/api/me', userController.ensureAuthenticated, userController.putUserProfile);
 
 //User
 //app.post('/api/user/password', userController.isLogin, userController.changeUserPassword, emailController.sendEmail);
