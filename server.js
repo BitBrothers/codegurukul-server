@@ -89,7 +89,7 @@ var adminController = require('./controllers/admin');
 //Login APIs  //Github and linkedin auth needs testing...awaiting front end code
 app.post('/api/auth/github', userController.githubAuth);
 app.post('/api/auth/linkedin', userController.linkedinAuth);
-app.post('/api/auth/signup', userController.signup);
+app.post('/api/auth/signup', userController.postSignup);
 app.post('/api/auth/signup/resend', userController.signupResend);
 app.post('/api/auth/signup/verification', userController.signupVerify);
 app.post('/api/auth/login', userController.postLogin);

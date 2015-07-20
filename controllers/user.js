@@ -133,46 +133,62 @@ exports.isAdmin = function(req, res, next) {
   }
 };
 
-exports.signup = function(req, res, next) {
-  if (req.existingUser) {
-    return next();
-  }
-  if (!validator.validate(req.body.email))
-    return res.status(400).send(msg.inem);
-  var user = new User({
-    email: req.body.email,
-    password: req.body.password,
-    username: req.body.username,
-    mobile: req.body.mobile,
-    profile: {
-      fullname: req.body.fullname,
-      type: req.body.type,
-      college: req.body.college,
-      year: req.body.year,
-      stream: req.body.stream,
-      organization: req.body.organization,
-      workDesc: req.body.workDesc
+exports.postSignup = function(req, res, next) {
+//  if (req.existingUser) {
+//    return next();
+//  }
+//  if (!validator.validate(req.body.email))
+//    return res.status(400).send(msg.inem);
+//  var user = new User({
+//    email: req.body.email,
+//    password: req.body.password,
+//    username: req.body.username,
+//    mobile: req.body.mobile,
+//    profile: {
+//      fullname: req.body.fullname,
+//      type: req.body.type,
+//      college: req.body.college,
+//      year: req.body.year,
+//      stream: req.body.stream,
+//      organization: req.body.organization,
+//      workDesc: req.body.workDesc
+//    }
+//  });
+//  if (req.body.referalCode) {
+//    user.extReferalCode = req.body.referalCode;
+//  };
+//  user.save(function(err, user, numberAffected) {
+//    if (err) res.status(400).send(err);
+//    else {
+//      if(!req.admin) res.status(200).send(msg.signup);
+//      email.sendSignupEmail(user.email, user.username, user.verificationCode); 
+//      if (req.body.lead) 
+//        if (req.body.lead.cslug && req.body.lead.sid) course.addLead(user.id, req.body.lead.cslug, req.body.lead.sid);
+//      if (req.admin) {
+//        email.sendPassword(user.email, user.username, req.body.password);     
+//        req.user = user;
+//        next();
+//      }
+//    }
+//
+//  });
+  User.findOne({ email: req.body.email }, function(err, existingUser) {
+    if (existingUser) {
+      return res.status(409).send({ message: 'Email is already taken' });
     }
-  });
-  if (req.body.referalCode) {
-    user.extReferalCode = req.body.referalCode;
-  };
-  user.save(function(err, user, numberAffected) {
-    if (err) res.status(400).send(err);
-    else {
-      if(!req.admin) res.status(200).send(msg.signup);
-      email.sendSignupEmail(user.email, user.username, user.verificationCode); 
-      if (req.body.lead) 
-        if (req.body.lead.cslug && req.body.lead.sid) course.addLead(user.id, req.body.lead.cslug, req.body.lead.sid);
-      if (req.admin) {
-        email.sendPassword(user.email, user.username, req.body.password);     
-        req.user = user;
-        next();
-      }
-    }
-
+    var user = new User({
+      profile:  {
+          fullname: req.body.fullname
+      },
+      email: req.body.email,
+      password: req.body.password
+    });
+    user.save(function() {
+      res.send({ token: createJWT(user) });
+    });
   });
 };
+
 
 exports.signupResend = function (req, res) {
   if (!validator.validate(req.body.email))
