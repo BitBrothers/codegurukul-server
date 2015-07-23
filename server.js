@@ -137,7 +137,7 @@ app.put('/api/admin/courses/:cslug/image', userController.isAdmin, adminControll
 app.delete('/api/admin/courses/:cslug/image', userController.isAdmin, adminController.deleteImages);
 app.get('/api/admin/courses/:cslug', userController.isAdmin, adminController.getCourse);
 app.post('/api/admin/createCourse', userController.isAdmin, adminController.createCourse);
-app.post('/api/admin/courses/join', userController.isAdmin, adminController.joinPrep, userController.signup, courseController.joinCourse, invoiceController.generate);
+app.post('/api/admin/courses/join', userController.isAdmin, adminController.joinPrep, userController.postSignup, courseController.joinCourse, invoiceController.generate);
 app.get('/api/admin/courses', userController.isAdmin, adminController.getCourses);
 app.get('/api/admin/users', userController.isAdmin, adminController.getUsers);
 /**
