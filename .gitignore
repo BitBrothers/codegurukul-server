@@ -33,5 +33,12 @@ node_modules
 
 Thumbs.db
 config/secrets.js
+public/vendor
+public/app.min.js
+public/images/Thumbs.db
+public/style.min.css
+public/templates.js
 vendor/
+public/temp/
+public/img/course
 temp/

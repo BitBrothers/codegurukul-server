@@ -96,7 +96,7 @@ app.post('/api/auth/login', userController.login);
 app.post('/api/auth/facebook', userController.facebookAuth);
 app.post('/api/auth/google', userController.googleAuth);
 app.get('/api/users', userController.hasEmail);
-// app.post('/api/email', emailController.contactUs, emailController.sendEmail);
+app.post('/api/email', emailController.contactUs, emailController.sendEmail);
 
 //User
 //app.post('/api/user/password', userController.isLogin, userController.changeUserPassword, emailController.sendEmail);
@@ -113,7 +113,6 @@ app.use(errorHandler());
 app.post('/api/courses/join', userController.isLogin, razorController.verifyPay, courseController.joinCourse, invoiceController.generate);
 app.get('/api/courses/:cslug/:sid/canjoin', userController.isLogin, courseController.canJoin);
 app.post('/api/courses/:cslug/addlead', userController.isLogin, courseController.leadPre);
-app.post('/api/courses/:cslug/sendContent', courseController.sendCourseContent);
 app.get('/api/courses/:cslug', userController.isLoginOptional, courseController.getCourse);
 app.get('/api/courses', courseController.getCourses);
 
